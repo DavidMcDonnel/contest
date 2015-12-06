@@ -1,4 +1,4 @@
-# baselineTeam.py
+ # baselineTeam.py
 # ---------------
 # Licensing Information: Please do not distribute or publish solutions to this
 # project. You are free to use and extend these projects for educational
@@ -165,10 +165,34 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       myPos = successor.getAgentState(self.index).getPosition()
       minDistance = min([self.getMazeDistance(myPos, capsule) for capsule in capsuleList])
       features['distanceToCapsule'] = minDistance
-    
+
     enemies = [successor.getAgentState(i) for i in self.getOpponents(successor)]
-    invaders = [a for a in enemies if not a.isPacman and a.getPosition() != None]
-    dists = [self.getMazeDistance(myPos, a.getPosition()) for a in invaders]
+
+    # For invaders visible to defender
+    defenders = [a for a in enemies if not a.isPacman and a.getPosition() != None]
+    features['numDefenders'] = len(defenders)
+    dists = []
+    if len(defenders) > 0:
+      dists = [self.getMazeDistance(myPos, a.getPosition()) for a in defenders]
+      features['defenderDistance'] = min(dists)*-1
+
+    # For invaders invisible to defender, that can only be detected by particle filter
+    if all(gameState.getAgentState(k).getPosition() == None for k in self.mostLikelyPositions.keys()):
+        defenderDist = [self.getMazeDistance(successor.getAgentPosition(self.index), v) for k,v in self.mostLikelyPositions.items() if not gameState.getAgentState(k).isPacman
+                     and gameState.getAgentState(k).getPosition() == None]
+
+
+    if gameState.isOnRedTeam(self.index):
+        if features['successorScore'] >= 0:
+            features['winning'] = 1
+        else:
+            features['winning'] = -1
+    else:
+        if features['successorScore'] < 0:
+            features['winning'] = 1
+        else:
+            features['winning'] = -1
+
     val = 10
     if(dists):
         val = min(dists)
@@ -182,7 +206,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     return features
 
   def getWeights(self, gameState, action):
-    return {'successorScore': 100, 'distanceToFood': -1, 'distanceToCapsule': -3, 'ghost': -500}
+    return {'numDefenders':100,'defenderDistance':30,'successorScore': 100, 'distanceToFood': -1, 'distanceToCapsule': -3, 'ghost': -500,'winning':500}
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
   """

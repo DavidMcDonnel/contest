@@ -176,11 +176,6 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
       dists = [self.getMazeDistance(myPos, a.getPosition()) for a in defenders]
       features['defenderDistance'] = min(dists)*-1
 
-    # For invaders invisible to defender, that can only be detected by particle filter
-    if all(gameState.getAgentState(k).getPosition() == None for k in self.mostLikelyPositions.keys()):
-        defenderDist = [self.getMazeDistance(successor.getAgentPosition(self.index), v) for k,v in self.mostLikelyPositions.items() if not gameState.getAgentState(k).isPacman
-                     and gameState.getAgentState(k).getPosition() == None]
-
 
     if gameState.isOnRedTeam(self.index):
         if features['successorScore'] >= 0:
@@ -206,7 +201,7 @@ class OffensiveReflexAgent(ReflexCaptureAgent):
     return features
 
   def getWeights(self, gameState, action):
-    return {'numDefenders':100,'defenderDistance':30,'successorScore': 100, 'distanceToFood': -1, 'distanceToCapsule': -3, 'ghost': -500,'winning':500}
+    return {'numDefenders':100,'defenderDistance':10,'successorScore': 100, 'distanceToFood': -1, 'distanceToCapsule': -3, 'ghost': 500,'winning':-500}
 
 class DefensiveReflexAgent(ReflexCaptureAgent):
   """
@@ -265,7 +260,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
         invaderDists = [self.getMazeDistance(successor.getAgentPosition(self.index), v) for k,v in self.mostLikelyPositions.items() if gameState.getAgentState(k).isPacman
                      and gameState.getAgentState(k).getPosition() == None and myState.scaredTimer == 0]
         #print "invaderDists:", invaderDists
-        features['invaderDistance'] = min(invaderDists) if len(invaderDists) > 0 else 0
+        features['invaderDistance'] = min(min(invaderDists),features['invaderDistance']) if len(invaderDists) > 0 else 0
     #print "features['invaderDistance']:", features['invaderDistance']
     #print "Agents and indices:", [(i, successor.getAgentState(i).getPosition()) for i in self.getOpponents(successor)]
 
@@ -276,7 +271,7 @@ class DefensiveReflexAgent(ReflexCaptureAgent):
     return features
 
   def getWeights(self, gameState, action):
-    return {'numInvaders': -1000, 'distanceToFood': -2, 'onDefense': 100, 'invaderDistance': -10, 'stop': -100, 'reverse': -2, 'distanceToCapsule': -5}
+    return {'numInvaders': -1000, 'distanceToFood': -2, 'onDefense': 100, 'invaderDistance': -100, 'stop': -100, 'reverse': -2, 'distanceToCapsule': -3}
 
 
 class InferenceModule:
